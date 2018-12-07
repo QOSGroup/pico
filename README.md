@@ -1,5 +1,4 @@
 # pico
-<<<<<<< HEAD
 Practical ICO - Customized and transparent ICO procedure
 
 # Inspiration
@@ -23,8 +22,4 @@ This TF factor is added for the sake of teams’ continuity, for reasonable need
 # What we learned
 
 # What's next
-=======
-Initial Coin Bancorring - Customized and supervised ICO procedure
 
-
->>>>>>> correct typo
