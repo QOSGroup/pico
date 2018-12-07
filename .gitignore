@@ -37,3 +37,4 @@ src/main/resources/application-im.properties
 *.idea
 .trigger
 logs
+ignore/
