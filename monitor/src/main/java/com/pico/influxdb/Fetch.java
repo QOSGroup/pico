@@ -52,7 +52,9 @@ public class Fetch {
             }
         }
 
-        filterTx();
+        if(picoTokenList.size()>0) {
+            filterTx();
+        }
     }
 
     public void saveIndex(BigInteger index) {

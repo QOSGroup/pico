@@ -28,7 +28,7 @@ public class Web3jClient {
     @Value("${pico.ipc:}")
     private String ipc;
 
-    @Value("#{'${pico.contract.address}'.split(',')}")
+    @Value("#{'${pico.contract.address:}'.split(',')}")
     private List<String> contracts;
 
     @Bean
@@ -62,7 +62,9 @@ public class Web3jClient {
     public List<TransactionManager> transactionManager() throws Exception {
         List<TransactionManager> transactionManagers = new ArrayList<TransactionManager>();
         for (String contract : contracts) {
-            transactionManagers.add(new ReadonlyTransactionManager(web3jClientBean(), contract));
+            if(contract!=null&&contract.length()!=0) {
+                transactionManagers.add(new ReadonlyTransactionManager(web3jClientBean(), contract));
+            }
         }
         return transactionManagers;
     }

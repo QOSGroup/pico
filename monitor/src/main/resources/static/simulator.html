@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>TF stimulator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .left {
+            width: 650px;
+            height: 400px;
+            float: left;
+            display: flex;
+        }
+
+        .right {
+            width: 650px;
+            height: 400px;
+            float: right;
+            display: flex;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div STYLE="width: 100%;">
+    <div id="chart_constant" class="left" style="width: 50%"></div>
+    <div id="chart_persontageR" class="right" style="width: 50%"></div>
+</div>
+
+<div STYLE="width: 100%;">
+    <div class="left" STYLE="margin-left: 100px;">
+        <div style="width: 100px">
+            TF:<input id="tf_input_constant" type="text" value="1000" size="10"/><br>
+        </div>
+        <div style="width: 120px">
+            CW:<input id="cw_input_constant" type="text" value="0.3" size="10"/><br>
+        </div>
+        <div style="width: 200px;display: flex;">
+            <div style="width: 40%">
+                <input type="button" value="simulate" s
+                       onclick="javascript:drawSimulation('constant', false);"/>
+            </div>
+            <div style="width: 40%">
+                <input type="button" value="make sectioned"
+                       onclick="javascript:drawSimulation('constant', true);"/><br>
+            </div>
+        </div>
+    </div>
+
+    <div class="right">
+        <div class="left" STYLE="margin-left: 100px;">
+            <div style="width: 200px">
+                TF=<input id="tf_input_persontageR" type="text" value="50" size="10"/>%*∆R
+            </div>
+            <div style="width: 120px">
+                CW=<input id="cw_input_persontageR" type="text" value="0.3" size="10"/>
+            </div>
+            <div style="width: 120px">
+                <div>
+                    <input type="button" value="simulate" id="button_persontageR"
+                           onclick="javascript:drawSimulation('persontageR', false);"/><br>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script type="text/javascript">
+
+        function drawSimulation(type, is_sectioned) {
+
+
+            var s_end = 4000;
+            var s = 1000;
+            var s_step = 100;
+            var r = 500;
+
+            var x_s = [];
+            var y_pb = [];
+            var y_ps = [];
+            var y_tf = [];
+            var r_array = [];
+            var tf;
+            var tf_formula;
+            var cw;
+            var title_str;
+
+            var decreasing = false;
+
+            switch (type) {
+                case "constant":
+                    tf_formula = document.getElementById("tf_input_" + type).value;
+                    title_str = "TF = " + tf_formula + "(constant)";
+                    cw = parseFloat(document.getElementById("cw_input_" + type).value);
+                    break;
+                case "persontageR":
+                    tf_formula = document.getElementById("tf_input_" + type).value;
+                    title_str = "TF = " + tf_formula + "%∆R";
+                    cw = parseFloat(document.getElementById("cw_input_" + type).value);
+                    break;
+            }
+
+            while (s <= s_end) {
+                switch (type) {
+                    case "constant":
+                        tf = parseFloat(tf_formula);
+                        break;
+                    case "persontageR":
+                        if (r_array.length == 0) {
+                            r_array.push(r);
+                            r = r * Math.pow((1 + s_step / s), (1 / cw));
+                            s = s + s_step;
+                            continue;
+                        } else {
+                            tf = (r - r_array[r_array.length - 1]) * parseFloat(tf_formula) / 100.0;
+                        }
+                        break;
+                }
+                r_array.push(r);
+                x_s.push(s);
+
+                p_buy = (r + tf) * (Math.pow((1 + s_step / s), (1 / cw)) - 1) / s_step;
+                p_sell = r * (Math.pow((1 + s_step / s), (1 / cw)) - 1) / s_step;
+
+                if (is_sectioned && y_pb.length > 0 && p_buy < y_pb[y_pb.length - 1]) {
+                    decreasing = true;
+                }
+                if (is_sectioned && decreasing && p_buy >= y_pb[y_pb.length - 1]) {
+                    for (i = 0; i < y_pb.length; i++) {
+                        y_pb[i] = p_buy;
+                    }
+                    decreasing = false;
+                }
+                y_pb.push(p_buy);
+                y_ps.push(p_sell);
+
+                buy_cost = p_buy * s_step;
+                sell_get = p_sell * s_step;
+
+                tf_profit = buy_cost - sell_get;
+                y_tf.push(tf_profit);
+
+                r = r + sell_get;
+                s = s + s_step;
+            }
+
+            var trace_buy = {
+                x: x_s,
+                xaxis: 'smart token supply',
+                y: y_pb,
+                yaxis: 'price of usser buy',
+                name: 'buying price'
+            };
+
+            var trace_sell = {
+                x: x_s,
+                xaxis: 'smart token supply',
+                y: y_ps,
+                yaxis: 'price of usser buying',
+                name: 'selling price'
+            };
+
+            var data = [trace_buy, trace_sell];
+            var layout = {
+                title: title_str
+            };
+
+            Plotly.newPlot("chart_" + type, data, layout);
+        }
+
+        drawSimulation("constant");
+        drawSimulation("persontageR");
+    </script>
+</body>
+</html>
