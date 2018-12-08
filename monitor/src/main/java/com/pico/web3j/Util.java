@@ -41,13 +41,13 @@ public class Util {
                     web3j,
                     baseClientTransactionManager,
                     contractGasProvider,
-                    new BigInteger("500"),
-                    "AToken",
-                    "AToken",
-                    new BigInteger("0"),
-                    new BigInteger("1000"),
-                    new BigInteger("300000"),
-                    new BigInteger("1000")
+                    new BigInteger("20000"),
+                    "BToken",
+                    "BToken",
+                    BigInteger.ZERO,
+                    new BigInteger("2000"),
+                    new BigInteger("200000"),
+                    BigInteger.ZERO
             ).send();
 
             contract.getTransactionReceipt().get().getBlockNumber();
@@ -87,7 +87,7 @@ public class Util {
 
     public boolean withdraw() {
         ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(10),BigInteger.valueOf(6_300_000));
-
+    
         if (!unlock(baseAddress, basePassword)) {
             return false;
         }
