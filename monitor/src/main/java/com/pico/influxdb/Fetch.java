@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tx.exceptions.ContractCallException;
 
 import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
@@ -75,31 +77,31 @@ public class Fetch {
                 picoMetric.setName(picoToken.name().send());
                 picoMetric.setCw(picoToken._cweight().send());
                 picoMetric.setTeamFound(picoToken.teamFound().send());
-
                 picoMetric.setTotalReserve(picoToken.totalReserve().send());
                 picoMetric.setTotalSupply(picoToken.totalSupply().send());
                 picoMetric.setTotalTeamFound(picoToken.totalTeamFound().send());
                 picoMetric.setPrice(picoToken.getCurrentPrice().send());
+                picoToken.setDefaultBlockParameter(DefaultBlockParameterName.LATEST);
                 influxDB.write(picoMetric.point());
-            } catch (Exception e) {
-                log.error("", e);
+            } catch (Exception e1){
+                log.error("",e1);
             }
         }
     }
 
     public void filterTx() {
-        Disposable disposable = web3j.replayPastBlocksFlowable(DefaultBlockParameter.valueOf(startBlock),
+        Disposable disposable = web3j.replayPastAndFutureBlocksFlowable(DefaultBlockParameter.valueOf(startBlock),
                                                                true).subscribe(ethBlock -> {
             parseBlock(ethBlock.getBlock());
             saveIndex(ethBlock.getBlock().getNumber());
         });
 
-        web3j.blockFlowable(true).subscribe(ethBlock -> {
-            parseBlock(ethBlock.getBlock());
-            if (disposable.isDisposed()) {
-                saveIndex(ethBlock.getBlock().getNumber());
-            }
-        });
+//        web3j.blockFlowable(true).subscribe(ethBlock -> {
+//            parseBlock(ethBlock.getBlock());
+//            if (disposable.isDisposed()) {
+//                saveIndex(ethBlock.getBlock().getNumber());
+//            }
+//        });
     }
 
     public void parseBlock(EthBlock.Block block) {
@@ -123,6 +125,23 @@ public class Fetch {
                         TransactionReceipt receipt = web3j.ethGetTransactionReceipt(
                                 tx.getHash()).send().getResult();
                         picoTx.setStatus(receipt.getStatus());
+                        for(PICOToken.ReservedEventResponse reserved:picoToken.getReservedEvents(receipt)){
+                            picoTx.setMethod("Buy");
+                            picoTx.setMethodNumber(10);
+                            picoTx.setValue(reserved._amount);
+                            for(PICOToken.IssuedEventResponse issue:picoToken.getIssuedEvents(receipt)){
+                                picoTx.setToken(issue._amount);
+                            }
+                        }
+
+                        for(PICOToken.RemovedEventResponse removed:picoToken.getRemovedEvents(receipt)){
+                            picoTx.setMethod("Sell");
+                            picoTx.setMethodNumber(20);
+                            picoTx.setValue(removed._amount);
+                            for(PICOToken.BurnedEventResponse burned:picoToken.getBurnedEvents(receipt)){
+                                picoTx.setToken(burned._amount);
+                            }
+                        }
                         influxDB.write(picoTx.point());
                         continue;
                     }

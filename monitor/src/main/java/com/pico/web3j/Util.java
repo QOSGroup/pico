@@ -22,7 +22,7 @@ public class Util {
     public String     baseAddress    = "0xecfdbe9a0d897100cd386e785cd2bacc00c36736";
     public String     basePassword   = "12345678";
     public BigInteger unlockDuration = BigInteger.valueOf(60L);
-    public String contractAddress= "0x34c01eebfb06b5f191791a4eae814c11fb886ff1";
+    public String contractAddress= "0x2d7dc58d59ff7c4e91e3c5c39854907bbaef884c";
 
     public Web3j                    web3j                        = Web3j.build(new HttpService(RPC_URL));
     public Admin                    admin                        = Admin.build(new HttpService(RPC_URL));
@@ -30,7 +30,7 @@ public class Util {
                                                                                                 baseAddress);
 
     public boolean deploy() {
-        ContractGasProvider contractGasProvider = new StaticGasProvider(ManagedTransaction.GAS_PRICE,BigInteger.valueOf(6_300_000));
+        ContractGasProvider contractGasProvider = new StaticGasProvider(ManagedTransaction.GAS_PRICE, BigInteger.valueOf(7_300_000));
 
         if (!unlock(baseAddress, basePassword)) {
             return false;
@@ -42,12 +42,12 @@ public class Util {
                     baseClientTransactionManager,
                     contractGasProvider,
                     new BigInteger("500"),
-                    "pico3",
-                    "pico3",
-                    new BigInteger("4"),
+                    "AToken",
+                    "AToken",
+                    new BigInteger("0"),
                     new BigInteger("1000"),
-                    new BigInteger("500000"),
-                    new BigInteger("20")
+                    new BigInteger("300000"),
+                    new BigInteger("1000")
             ).send();
 
             contract.getTransactionReceipt().get().getBlockNumber();
@@ -61,7 +61,32 @@ public class Util {
     }
 
     public boolean invest() {
-        ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(1000),BigInteger.valueOf(6_300_000));
+        ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(10),BigInteger.valueOf(6_300_000));
+
+        if (!unlock(baseAddress, basePassword)) {
+            return false;
+        }
+
+        try {
+            PICOToken contract = PICOToken.load(contractAddress, web3j, baseClientTransactionManager,
+                                                new DefaultGasProvider());
+            log.info(contract.name().send());
+            log.info("total_reserve:{}",contract.totalReserve().send());
+            log.info("balance:{}",contract.balanceOf(baseAddress).send());
+
+            TransactionReceipt receipt=contract.invest(contractAddress, BigInteger.valueOf(100), BigInteger.valueOf(100)).send();
+            log.info("block:{}",receipt.getBlockNumber());
+            log.info("tx:{}",receipt.getTransactionHash());
+            log.info("balance:{}",contract.balanceOf(baseAddress).send());
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean withdraw() {
+        ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(10),BigInteger.valueOf(6_300_000));
 
         if (!unlock(baseAddress, basePassword)) {
             return false;
@@ -71,9 +96,12 @@ public class Util {
             PICOToken contract = PICOToken.load(contractAddress, web3j, baseClientTransactionManager,
                                                 new DefaultGasProvider());
             log.info("total_reserve:{}",contract.totalReserve().send());
-            log.info("balance:{}",contract.balanceOf(baseAddress).send());
-
-            TransactionReceipt receipt=contract.invest(contractAddress, BigInteger.ZERO, BigInteger.TEN).send();
+            BigInteger balance=contract.balanceOf(baseAddress).send();
+            log.info("balance:{}",balance);
+            if(balance.compareTo(BigInteger.valueOf(100))>0){
+                balance=BigInteger.valueOf(100);
+            }
+            TransactionReceipt receipt=contract.withdraw(contractAddress, balance).send();
             log.info("block:{}",receipt.getBlockNumber());
             log.info("tx:{}",receipt.getTransactionHash());
             log.info("balance:{}",contract.balanceOf(baseAddress).send());
@@ -94,8 +122,12 @@ public class Util {
     }
 
     public static void main(String[] args){
-//        new Util().deploy();
-        new Util().invest();
+        Util util=new Util();
+        util.deploy();
+        for(int i=0;i<100;i++) {
+            util.invest();
+            util.withdraw();
+        }
     }
 
 }
