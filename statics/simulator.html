@@ -45,14 +45,17 @@ function drawSimulation(type){
 				break;
 			case "persontageR":
 				if(r_array.length==0){
-					tf = parseFloat(r)/10;
+					r_array.push(r);
+					r = r  *  Math.pow((1 + s_step / s), (1 / cw));
+					s = s+s_step;
+					continue;
 				}else{
 					tf = (r-r_array[r_array.length-1])*parseFloat(tf_formula)/100.0;
 				}
 				break;
 		}
-		x_s.push(s);
 		r_array.push(r);
+		x_s.push(s);
 		
 		p_buy = (r + tf)  *  ( Math.pow((1 + s_step / s), (1 / cw)) - 1) / s_step;
 		p_sell = r  *  ( Math.pow((1 + s_step / s), (1 / cw)) - 1) / s_step;
@@ -64,7 +67,6 @@ function drawSimulation(type){
 		
 		tf_profit = buy_cost - sell_get;
 		y_tf.push(tf_profit);
-		
 		
 		r = r + sell_get;
 		s = s+s_step;
