@@ -19,14 +19,14 @@ Our curve of supply-price should be coherent with original bancor protocol, at t
 
 On buying, the formula will look like:
 
-![buying]( https://github.com/QOSGroup/pico/blob/master/statics/buying.png?raw=true)
+![buying]( https://github.com/QOSGroup/pico/blob/master/static/buying.png?raw=true)
 
 On selling, the formula remains the same as original:
-![selling]( https://github.com/QOSGroup/pico/blob/master/statics/selling.png?raw=true)
+![selling]( https://github.com/QOSGroup/pico/blob/master/static/selling.png?raw=true)
 
 In-between buying and then selling the same number of smart tokens on the same total supply, the team funding collects:
 
-![TF_inc]( https://github.com/QOSGroup/pico/blob/master/statics/TF_inc.png?raw=true)
+![TF_inc]( https://github.com/QOSGroup/pico/blob/master/static/TF_inc.png?raw=true)
 
 ## Working based on bancor protocol
 We extended some of bancor's code for recalculation and implements getTF() function in solidity with varies CWs and getTFs
