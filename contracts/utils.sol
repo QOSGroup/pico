@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.4.18;
 
 //This contract is borrowed from bancor contract, Thank you!
 
@@ -23,7 +23,7 @@ contract Utils {
 
     uint256[128] private maxExpArray;
 
-    constructor() public {
+    function Utils() public {
     //  maxExpArray[  0] = 0x6bffffffffffffffffffffffffffffffff;
     //  maxExpArray[  1] = 0x67ffffffffffffffffffffffffffffffff;
     //  maxExpArray[  2] = 0x637fffffffffffffffffffffffffffffff;

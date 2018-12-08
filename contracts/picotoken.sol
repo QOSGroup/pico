@@ -1,6 +1,7 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.4.18;
 
-import "utils.sol";
+import "./utils.sol";
+import "./KyberNetworkProxyInterface.sol";
 
 /**
  * @title SafeMath
@@ -93,7 +94,7 @@ contract BasicToken is ERC20Basic {
 
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
-    emit Transfer(msg.sender, _to, _value);
+    Transfer(msg.sender, _to, _value);
     return true;
   }
 
@@ -112,7 +113,7 @@ contract BasicToken is ERC20Basic {
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
-contract ERC20 is ERC20Basic {
+contract ERC20Token is ERC20Basic {
   function allowance(address owner, address spender)
     public view returns (uint256);
 
@@ -134,7 +135,7 @@ contract ERC20 is ERC20Basic {
  * https://github.com/ethereum/EIPs/issues/20
  * Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
-contract StandardToken is ERC20, BasicToken {
+contract StandardToken is ERC20Token, BasicToken {
 
   mapping (address => mapping (address => uint256)) internal allowed;
 
@@ -160,7 +161,7 @@ contract StandardToken is ERC20, BasicToken {
     balances[_from] = balances[_from].sub(_value);
     balances[_to] = balances[_to].add(_value);
     allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-    emit Transfer(_from, _to, _value);
+    Transfer(_from, _to, _value);
     return true;
   }
 
@@ -181,7 +182,7 @@ contract StandardToken is ERC20, BasicToken {
   function approve(address _spender, uint256 _value) public returns (bool) {
     require((_value == 0) || (allowed[msg.sender][_spender] == 0));
     allowed[msg.sender][_spender] = _value;
-    emit Approval(msg.sender, _spender, _value);
+    Approval(msg.sender, _spender, _value);
     return true;
   }
 
@@ -220,7 +221,7 @@ contract StandardToken is ERC20, BasicToken {
   {
     allowed[msg.sender][_spender] = (
       allowed[msg.sender][_spender].add(_addedValue));
-    emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
+    Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
     return true;
   }
 
@@ -246,14 +247,16 @@ contract StandardToken is ERC20, BasicToken {
     } else {
       allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
     }
-    emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
+    Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
     return true;
   }
 
 }
 
 contract PICOToken is StandardToken, Utils {
-    address payable public OWNER;
+    address public OWNER;
+    address public KyberNetworkProxy_;
+    address public EtherAddress;
     string public name;
     string public symbol;
     uint8 public decimals;
@@ -263,7 +266,13 @@ contract PICOToken is StandardToken, Utils {
     uint256 public totalReserve;
     uint256 public totalTeamFound;
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals, 
+    event Issued(uint256 _amount);
+    event Burned(uint256 _amount);
+
+    event Reserved(uint256 _amount);
+    event Removed(uint256 _amount);
+
+    function PICOToken(string _name, string _symbol, uint8 _decimals, 
         uint256 _total, uint32 _cw, uint256 _tf) public payable {
         OWNER = msg.sender;
         name = _name;
@@ -282,6 +291,9 @@ contract PICOToken is StandardToken, Utils {
 
         uint256 decimalValue = 10 ** uint256(decimals);
         totalSupply_ = SafeMath.mul(_total, decimalValue);
+
+        KyberNetworkProxy_ = address(0x818E6FECD516Ecc3849DAf6845e3EC868087B755);
+        EtherAddress = ERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
     }
 
     function getTF() public view returns (uint256){
@@ -332,17 +344,44 @@ contract PICOToken is StandardToken, Utils {
         return SafeMath.div(_t1, _t2);
     }
 
+    function swapToEther(ERC20 _token, uint256 _amount) internal returns (uint256) {
+        uint256 minRate;
+
+        KyberNetworkProxyInterface _kyberNetworkProxy = KyberNetworkProxyInterface(KyberNetworkProxy_);
+        (, minRate) = _kyberNetworkProxy.getExpectedRate(_token, ERC20(EtherAddress), _amount);
+
+        // Check that the token transferFrom has succeeded
+        require(_token.transferFrom(msg.sender, this, _amount));
+
+        // Mitigate ERC20 Approve front-running attack, by initially setting
+        // allowance to 0
+        require(_token.approve(_kyberNetworkProxy, 0));
+
+        // Approve tokens so network can take them during the swap
+        _token.approve(address(_kyberNetworkProxy), _amount);
+        return _kyberNetworkProxy.swapTokenToEther(_token, _amount, minRate);
+        // Send received tokens to destination address
+        //require(EtherAddress.transfer(destAddress, destAmount));
+    }
+
     /* duidu protocal ?
         investors invest their token to this token, and get this tokens back.
         record this number in _balance, get the number by balanceOf function
     */
     function invest(ERC20 _token, uint256 _amount) public payable { 
-        require(msg.value > 0);
         require(address(_token) != address(0));
-        //_token.balanceOf(msg.sender);
         uint256 _r = msg.value;
+        if (msg.value == 0) {
+            //This should be called outside before this function.
+            //require(_token.approve(address(this), _amount));
+            require(_amount > 0);
 
-        require( _amount == _r);
+            _r = swapToEther(_token, _amount);
+
+        } else {
+
+            require( _amount == _r);
+        }
 
 
         uint256 _s = getSupply(_r); 
@@ -354,21 +393,49 @@ contract PICOToken is StandardToken, Utils {
         //SafeMath.mul(totalReserve, _denominator).div(_cweight);
 
         balances[msg.sender] = SafeMath.add(balances[msg.sender], _s);
+
         OWNER.transfer(_dr);
 
-        emit Issued(_s);
-        emit Transfer(address(this), msg.sender, _s);
-        emit Transfer(msg.sender, address(this), _r);
-        emit Transfer(address(this), OWNER, _dr);
+        Issued(_s);
+        Reserved(_r);
+        Transfer(address(this), msg.sender, _s);
+        Transfer(msg.sender, address(this), _r);
+        Transfer(address(this), OWNER, _dr);
     }
 
     /**
         return invest count
     */
     function getInvest(ERC20 _token, uint256 _amount) public view returns (uint256) {
-        _token.balanceOf(msg.sender);
-        return getSupply(_amount); 
+        require(_amount != 0);
+
+        uint256 _r = _amount;
+        if (address(_token) != address(0)) {
+            uint256 minRate;
+
+            KyberNetworkProxyInterface _kyberNetworkProxy = KyberNetworkProxyInterface(KyberNetworkProxy_);
+            (, minRate) = _kyberNetworkProxy.getExpectedRate(_token, ERC20(EtherAddress), _amount);
+
+            _r = minRate * _amount;
+
+        }
+
+        return getSupply(_r);
     }
+
+    function swapEtherToToken (ERC20 _token, address destAddress, uint256 value) internal {
+
+        uint minRate;
+        KyberNetworkProxyInterface _kyberNetworkProxy = KyberNetworkProxyInterface(KyberNetworkProxy_);
+        (, minRate) = _kyberNetworkProxy.getExpectedRate(ERC20(EtherAddress), _token, value);
+
+        //will send back tokens to this contract's address
+        uint destAmount = _kyberNetworkProxy.swapEtherToToken.value(value)(_token, minRate);
+
+        //send received tokens to destination address
+        require(_token.transfer(destAddress, destAmount));
+    }
+
 
     /**
         if investors want to withdraw their invests, they can call withdraw function to withdraw their tokens back.
@@ -376,25 +443,44 @@ contract PICOToken is StandardToken, Utils {
     */
     function withdraw(ERC20 _token, uint256 _amount) public { 
         require(_amount>0 && _amount <= balances[msg.sender]);
-        //_token.balanceOf(msg.sender);
-        
+
         uint256 _s = _amount;
         uint256 _r = getReserve(_s, false); 
         totalSupply_ = SafeMath.sub(totalSupply_, _s);
         totalReserve = SafeMath.sub(totalReserve, _r);
 
-        msg.sender.transfer(_r);
+        // withdraw ether into _token type
+        if (address(_token) != address(0)) {
+            swapEtherToToken(_token, msg.sender, _r);
+        } else {
+
+            msg.sender.transfer(_r);
+        }
+
         balances[msg.sender] = SafeMath.sub(balances[msg.sender], _s);
 
-        emit Transfer(address(this), msg.sender, _r);
-        emit Burned(_s);
+        Transfer(address(this), msg.sender, _r);
+        Burned(_s);
+        Removed(_r);
     }
 
     /**
         return withdraw count
     */
     function getWithdraw(ERC20 _token, uint256 _amount) public view returns (uint256){
-        _token.balanceOf(msg.sender);
-        return getReserve(_amount, true); 
+        require(_amount != 0);
+        uint256 _s = _amount;
+        uint256 _r = getReserve(_s, true); 
+
+        if (address(_token) != address(0)) {
+            uint256 minRate;
+
+            KyberNetworkProxyInterface _kyberNetworkProxy = KyberNetworkProxyInterface(KyberNetworkProxy_);
+            (, minRate) = _kyberNetworkProxy.getExpectedRate(ERC20(EtherAddress), _token, _r);
+
+            _r = minRate * _r;
+
+        }
+        return _r;
     }
 }
