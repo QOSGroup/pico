@@ -2,7 +2,7 @@
 Practical ICO - a customized and transparent ICO procedure
 
 # Inspiration
-ICOs usually play a questioned role in cryptoeconomic, for whitepapers are not easy to understand by ordinary investors, both technically and economically, and once done, technically there is no restrain for the already profited team. As a result of some bad examples, both investors and honest teams were harmed.
+ICOs sometimes play a questioned role in cryptoeconomic, for whitepapers are not easy to understand by ordinary investors, both technically and economically, and once done, technically there is no restrain for the already profited team. As a result of some bad examples, both investors and honest teams were harmed.
 
 Bancor protocol is an asynchronous price discovery mechanism, also offers a good practice for creating tokens based on one or more connector token(s), the later provides reserved value for the new tokens, and for a given connector weight, the curve of a created token’s price could be predicable and transparent to end users.
 
@@ -29,7 +29,7 @@ In-between buying and then selling the same number of smart tokens on the same t
 ![TF_inc]( https://github.com/QOSGroup/pico/blob/master/statics/TF_inc.png?raw=true)
 
 ## Working based on bancor protocol
-We implements getTF() function in solidity with varies CWs and getTFs and recalculate the 
+We extended some of bancor's code for recalculation and implements getTF() function in solidity with varies CWs and getTFs
 
 ## Testing and proving
 We deployed the contract on Ropsten and send test buying/selling txs, collected and displayed data, utilizing web3js, influxdb and Grafana.
@@ -39,7 +39,7 @@ We tested 3 simple modules:
 * TF is a constant
 * TF is a percentage of connector tokens paid
 Check out the result at http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1&from=1544269748605&to=1544276767808&var-name=IToken
-The results produced on testnet is coherent with our simulator in js.
+The results produced on testnet is coherent with our simulator in javascript.
 
 ## Enable user to issue ERC20 tokens with all other ERC20 tokens
 Thanks to the warm help from Kyber!
@@ -54,4 +54,7 @@ We are quite happy with the result
 Encountered all different thoughts on tokens trading.
 
 # What's next
-This module needs more verification by testing and adjusting. We’d like to continue this work to make it really practical, and introduce more interesting and useful features such as governance of investors’ voting.
+We’d like to continue this work to make it really practical by adjusting and more testing, and introduce more interesting and useful features such as governance of investors’ voting.
+
+# Build with
+Solidity, Kyber api, java, javascript, bash
