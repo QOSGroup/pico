@@ -38,7 +38,9 @@ We tested 3 simple modules:
 * TF = 0 and CW = 0.5
 * TF is a constant
 * TF is a percentage of connector tokens paid
+
 Check out the result at http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1&from=1544269748605&to=1544276767808&var-name=IToken
+
 The results produced on testnet is coherent with our simulator in javascript.
 
 ## Enable user to issue ERC20 tokens with all other ERC20 tokens
