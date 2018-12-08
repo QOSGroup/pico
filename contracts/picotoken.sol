@@ -307,7 +307,7 @@ contract PICOToken is StandardToken, Utils {
     function getReserve(uint256 _s, bool _test) internal view returns (uint256){
         require(_s<= totalSupply_);
         if (!_test)
-            require(_s == balances[msg.sender]);
+            require(_s <= balances[msg.sender]);
         if(_s == 0)
             return 0;
 
@@ -375,8 +375,8 @@ contract PICOToken is StandardToken, Utils {
         this token will be burned.
     */
     function withdraw(ERC20 _token, uint256 _amount) public { 
-        require(_amount>0 && _amount < balanceOf(msg.sender));
-        _token.balanceOf(msg.sender);
+        require(_amount>0 && _amount <= balances[msg.sender]);
+        //_token.balanceOf(msg.sender);
         
         uint256 _s = _amount;
         uint256 _r = getReserve(_s, false); 
@@ -384,6 +384,7 @@ contract PICOToken is StandardToken, Utils {
         totalReserve = SafeMath.sub(totalReserve, _r);
 
         msg.sender.transfer(_r);
+        balances[msg.sender] = SafeMath.sub(balances[msg.sender], _s);
 
         emit Transfer(address(this), msg.sender, _r);
         emit Burned(_s);
