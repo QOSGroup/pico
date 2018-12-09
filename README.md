@@ -39,7 +39,7 @@ We tested 3 simple modules:
 * TF is a constant
 * TF is a percentage of connector tokens paid
 
-Check out the result at [Our grafana page](http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1&from=now-24h&to=now&refresh=5s&var-name=BToken&var-myinterval=5m).
+Check out the result at [Our grafana page](http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1).
 
 The results produced on testnet is coherent with our [simulator](http://18.144.37.250:8080/simulator.html).
 
