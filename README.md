@@ -39,9 +39,9 @@ We tested 3 simple modules:
 * TF is a constant
 * TF is a percentage of connector tokens paid
 
-Check out the result at http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1&from=1544269748605&to=1544276767808&var-name=IToken
+Check out the result at [Our grafana page](http://18.144.37.250/d/Z5Kv-HPiz/pico?orgId=1&from=now-24h&to=now&refresh=5s&var-name=BToken&var-myinterval=5m).
 
-The results produced on testnet is coherent with our simulator in javascript.
+The results produced on testnet is coherent with our [simulator](http://18.144.37.250:8080/simulator.html).
 
 ## Enable user to issue ERC20 tokens with all other ERC20 tokens
 Thanks to the warm help from Kyber!
