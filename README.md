@@ -35,7 +35,6 @@ We extended some of bancor's code for recalculation and implements getTF() funct
 We deployed the contract on Ropsten and send test buying/selling txs, collected and displayed data, utilizing web3js, influxdb and Grafana.
 
 We tested 3 simple modules:
-* TF = 0 and CW = 0.5
 * TF is a constant
 * TF is a percentage of connector tokens paid
 
