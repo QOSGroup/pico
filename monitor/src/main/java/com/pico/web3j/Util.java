@@ -22,7 +22,7 @@ public class Util {
     public String     baseAddress    = "0xecfdbe9a0d897100cd386e785cd2bacc00c36736";
     public String     basePassword   = "12345678";
     public BigInteger unlockDuration = BigInteger.valueOf(60L);
-    public String contractAddress= "0x2d7dc58d59ff7c4e91e3c5c39854907bbaef884c";
+    public String contractAddress= "0x8bd28d665c2957be01d7cc22447e93f380084664";
 
     public Web3j                    web3j                        = Web3j.build(new HttpService(RPC_URL));
     public Admin                    admin                        = Admin.build(new HttpService(RPC_URL));
@@ -74,7 +74,7 @@ public class Util {
             log.info("total_reserve:{}",contract.totalReserve().send());
             log.info("balance:{}",contract.balanceOf(baseAddress).send());
 
-            TransactionReceipt receipt=contract.invest(contractAddress, BigInteger.valueOf(100), BigInteger.valueOf(100)).send();
+            TransactionReceipt receipt=contract.invest(contractAddress, BigInteger.valueOf(6000), BigInteger.valueOf(6000)).send();
             log.info("block:{}",receipt.getBlockNumber());
             log.info("tx:{}",receipt.getTransactionHash());
             log.info("balance:{}",contract.balanceOf(baseAddress).send());
@@ -87,7 +87,7 @@ public class Util {
 
     public boolean withdraw() {
         ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(10),BigInteger.valueOf(6_300_000));
-    
+
         if (!unlock(baseAddress, basePassword)) {
             return false;
         }
@@ -126,7 +126,7 @@ public class Util {
         util.deploy();
         for(int i=0;i<100;i++) {
             util.invest();
-            util.withdraw();
+//            util.withdraw();
         }
     }
 
